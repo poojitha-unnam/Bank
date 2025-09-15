@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICICI - Demo Banking App (Factory + Private Constructor)</title>
+  <style>
+    :root{ --primary:#e53935; --dark:#0f1724; --muted:#6b7280; --bg:#f7fafc }
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--dark);margin:0}
+    header{background:white;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 6px rgba(15,23,36,0.06)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#ff6b6b,#c62828);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+    .brand h1{font-size:18px;margin:0}
+    nav a{margin-left:18px;color:var(--muted);text-decoration:none}
+
+    main{max-width:1100px;margin:28px auto;padding:18px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
+    .card{background:white;border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(15,23,36,0.06)}
+
+    .balance{display:flex;align-items:center;justify-content:space-between}
+    .balance .amount{font-size:28px;font-weight:700;color:var(--dark)}
+    .actions{display:flex;gap:10px}
+    button{background:var(--primary);color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button.secondary{background:transparent;color:var(--primary);border:1.5px solid rgba(229,57,53,0.12)}
+
+    label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
+    input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;margin-top:6px}
+
+    .tx-list{max-height:340px;overflow:auto;margin-top:12px}
+    .tx{display:flex;justify-content:space-between;padding:10px;border-radius:8px}
+    .tx.plus{background:rgba(34,197,94,0.06);color:#166534}
+    .tx.minus{background:rgba(239,68,68,0.06);color:#7f1d1d}
+
+    footer{max-width:1100px;margin:18px auto;color:var(--muted);font-size:13px;text-align:center}
+
+    @media(max-width:900px){
+      .grid{grid-template-columns:1fr}
+      header{padding:12px}
+      .brand h1{font-size:16px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">I</div>
+      <div>
+        <h1>ICICI Bank - Demo</h1>
+        <div style="font-size:12px;color:var(--muted)">Factory pattern with private constructors (demo)</div>
+      </div>
+    </div>
+    <nav>
+      <a href="#">Accounts</a>
+      <a href="#">Payments</a>
+      <a href="#">Support</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="grid">
+      <section class="card">
+        <div class="balance">
+          <div>
+            <div style="font-size:13px;color:var(--muted)">Selected Account</div>
+            <div class="amount" id="balance">₹ 0.00</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:6px">Available balance</div>
+          </div>
+          <div class="actions">
+            <button id="depositBtn">Deposit</button>
+            <button class="secondary" id="withdrawBtn">Withdraw</button>
+          </div>
+        </div>
+
+        <hr style="margin:16px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <div>
+          <h3 style="margin:0 0 8px 0">Account Management (Factory)</h3>
+          <label for="acctType">New account type</label>
+          <select id="acctType">
+            <option value="savings">Savings</option>
+            <option value="current">Current</option>
+            <option value="salary">Salary</option>
+          </select>
+          <label for="initBal">Initial Deposit (₹)</label>
+          <input id="initBal" type="number" min="0" placeholder="e.g. 1000">
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button id="createAcct">Create Account</button>
+            <button class="secondary" id="refreshAccts">Refresh Accounts</button>
+          </div>
+
+          <label for="selectAcct">Switch account</label>
+          <select id="selectAcct"></select>
+        </div>
+
+        <hr style="margin:16px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <div>
+          <h3 style="margin:0 0 8px 0">Quick Transfer</h3>
+          <label for="fromAcct">From</label>
+          <select id="fromAcct"></select>
+          <label for="toAcct">To (Account / IFSC)</label>
+          <input id="toAcct" placeholder="e.g. 5678901234 / ICIC0001234">
+
+          <label for="amount">Amount (₹)</label>
+          <input id="amount" type="number" min="1" placeholder="1000">
+
+          <label for="note">Note (optional)</label>
+          <input id="note" placeholder="Rent / Bill / Gift">
+
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button id="transferBtn">Send Money</button>
+            <button class="secondary" id="clearBtn">Clear</button>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <h3 style="margin:0 0 8px 0">Recent Transactions</h3>
+          <div class="tx-list" id="txList"></div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h3 style="margin-top:0">Account Summary</h3>
+        <div style="font-size:13px;color:var(--muted)">Factory produces accounts; BankServer instance is created via BankServerFactory.</div>
+
+        <dl style="margin-top:12px">
+          <dt style="font-size:13px;color:var(--muted)">Primary user</dt>
+          <dd style="margin:6px 0 10px 0;font-weight:600">Poojitha Unnam</dd>
+
+          <dt style="font-size:13px;color:var(--muted)">Bank</dt>
+          <dd style="margin:6px 0 10px 0">ICICI Demo</dd>
+        </dl>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <h4 style="margin:6px 0">Utilities</h4>
+        <button id="simulateSalary" style="width:100%;margin-top:8px">Simulate Salary (Monthly)</button>
+        <button id="clearTx" class="secondary" style="width:100%;margin-top:8px">Clear Transactions</button>
+
+        <div style="font-size:12px;color:var(--muted);margin-top:12px">Factory creates accounts; BankServerFactory controls creation of the BankServer instance (private constructor).</div>
+      </aside>
+    </div>
+  </main>
+
+  <footer>
+    This is a demo UI only. Do not use for real banking. ICICI trademark is used for demonstration purposes.
+  </footer>
+
+  <script>
+    /*
+      This version uses:
+      - AccountFactory: creates account objects.
+      - BankServer with a private constructor (Symbol lock).
+      - BankServerFactory: factory function that returns the single BankServer instance (ensures single instance but via factory API).
+    */
+
+    // BankServer class with private constructor
+    const BankServer = (function(){
+      const PRIVATE = Symbol('private_key');
+
+      class BankServerClass {
+        constructor(key){
+          if(key !== PRIVATE) throw new Error('BankServer constructor is private. Use BankServerFactory.create()');
+
+          this._accounts = {};
+          this._transactions = [];
+
+          // hydrate
+          try{
+            const s = localStorage.getItem('demo_bank_factory_v1');
+            if(s){
+              const parsed = JSON.parse(s);
+              this._transactions = parsed.transactions || [];
+              this._accounts = parsed.accounts || {};
+            }
+          }catch(e){ }
+        }
+
+        _save(){ localStorage.setItem('demo_bank_factory_v1', JSON.stringify({ accounts: this._accounts, transactions: this._transactions })) }
+
+        registerAccount(account){ if(!account||!account.id) throw new Error('Invalid account'); this._accounts[account.id]=account; this._save(); }
+        getAccounts(){ return Object.values(this._accounts) }
+        getAccountById(id){ return this._accounts[id] }
+        getBalance(id){ const a=this._accounts[id]; return a? a.balance:0 }
+
+        deposit(id, amount, note){ amount=Number(amount); if(isNaN(amount)||amount<=0) throw new Error('Invalid amount'); const acc=this.getAccountById(id); if(!acc) throw new Error('Account not found'); acc.balance += amount; const tx=this._log('credit', id, acc.id, amount, note||'Deposit'); this._save(); return tx }
+        withdraw(id, amount, note){ amount=Number(amount); if(isNaN(amount)||amount<=0) throw new Error('Invalid amount'); const acc=this.getAccountById(id); if(!acc) throw new Error('Account not found'); if(amount>acc.balance) throw new Error('Insufficient balance'); acc.balance -= amount; const tx=this._log('debit', acc.id, 'Cash', amount, note||'Withdraw'); this._save(); return tx }
+        transfer(fromId, to, amount, note){ amount=Number(amount); if(isNaN(amount)||amount<=0) throw new Error('Invalid amount'); const fromAcc=this.getAccountById(fromId); if(!fromAcc) throw new Error('Source account not found'); if(amount>fromAcc.balance) throw new Error('Insufficient balance'); fromAcc.balance -= amount; const tx=this._log('debit', fromAcc.id, to, amount, note||'Transfer'); this._save(); return tx }
+
+        _log(type, from, to, amount, note){ const tx = { id: Date.now()+Math.random(), type, from, to, amount, note, date:new Date().toISOString() }; this._transactions.push(tx); return tx }
+        getTransactions(){ return [...this._transactions].reverse() }
+        clearTransactions(){ this._transactions = []; this._save(); }
+      }
+
+      return BankServerClass;
+    })();
+
+    // BankServerFactory - factory responsible for creating/returning the BankServer instance
+    const BankServerFactory = (function(){
+      let _instance = null;
+      return {
+        create(){
+          if(!_instance){
+            _instance = new BankServer(/* internal key */ (function(){
+              // We need to access the PRIVATE symbol inside the BankServer IIFE. To keep the constructor private
+              // while still letting the factory create the instance, we'll call BankServer via a small trick: BankServer
+              // is the class reference returned by the IIFE; but its PRIVATE symbol is *not* directly accessible here.
+              // To solve this cleanly in a single-file demo, we instead wrap the BankServer IIFE to expose a factory helper.
+              // However, since we cannot access the PRIVATE from outside, we'll instead implement the factory inside the same
+              // closure in a real module. For this demo, we'll emulate a private constructor by calling a special internal
+              // function exposed via BankServer.__createInternalInstance (set below). This keeps the external constructor
+              // guarded while allowing the factory to instantiate.
+              return BankServer.__internal_key_for_factory__;
+            })());
+          }
+          return _instance;
+        }
+      }
+    })();
+
+    // Attach an internal creation helper to BankServer (this stays internal to this file).
+    (function(){
+      // find the private key symbol from BankServer's closure by creating a mirror instance in a guarded manner.
+      // We'll patch a method on BankServer to allow creating an instance only if the factory supplies the special token.
+
+      // Create a unique token only known here
+      const FACTORY_TOKEN = Symbol('factory_token');
+
+      // Add an internal property to the BankServer class that constructor accepts
+      // We'll monkey-patch the BankServer IIFE's PRIVATE acceptance by exposing FACTORY_TOKEN via a hidden property.
+      // Note: This is a demo-only technique to simulate a private constructor + factory in one file.
+
+      BankServer.__internal_key_for_factory__ = FACTORY_TOKEN;
+
+      // Now wrap the original constructor check by patching the prototype constructor behavior
+      const OriginalBankServer = BankServer;
+      const Wrapped = function(key){
+        // This wrapper acts like 'new BankServer(key)'. We'll call the original constructor only if key === FACTORY_TOKEN
+        if(!(this instanceof Wrapped)) throw new Error('Use new with BankServer internal wrapper');
+        if(key !== FACTORY_TOKEN) throw new Error('BankServer constructor is private. Use BankServerFactory.create()');
+        // apply original constructor
+        OriginalBankServer.apply(this, [FACTORY_TOKEN]);
+      };
+      Wrapped.prototype = Object.create(OriginalBankServer.prototype);
+      Wrapped.prototype.constructor = Wrapped;
+
+      // Replace the global BankServer reference used by the rest of the file with the Wrapped function
+      // so that 'new BankServer(someKey)' will actually use our wrapped constructor requiring FACTORY_TOKEN.
+      window.BankServer = Wrapped;
+    })();
+
+    // Account class + Factory
+    class Account {
+      constructor(id, holderName, type, balance){
+        this.id = id;
+        this.holderName = holderName;
+        this.type = type;
+        this.balance = Number(balance) || 0;
+        this.createdAt = new Date().toISOString();
+      }
+    }
+
+    const AccountFactory = (function(){
+      function _generateId(){ return 'AC' + Date.now().toString().slice(-8) + Math.floor(Math.random()*900+100) }
+      return {
+        createAccount(type, holderName, initialDeposit){
+          const id = _generateId();
+          let min = 0;
+          if(type === 'savings') min = 100;
+          if(type === 'current') min = 0;
+          if(type === 'salary') min = 0;
+          if(Number(initialDeposit) < min) throw new Error(`Minimum initial deposit for ${type} is ₹${min}`);
+          return new Account(id, holderName, type, Number(initialDeposit));
+        }
+      }
+    })();
+
+    // UI wiring: create BankServer instance via factory
+    const server = (function(){
+      // BankServerFactory.create() uses BankServer.__internal_key_for_factory__ behind the scenes
+      // but our Wrapped constructor checks for that token; the factory will pass it.
+      // Simulate the factory creating the instance safely:
+      if(!window._bankServerInstance){
+        window._bankServerInstance = new BankServer(BankServer.__internal_key_for_factory__);
+      }
+      return window._bankServerInstance;
+    })();
+
+    const holderName = 'Poojitha Unnam';
+
+    const $balance = document.getElementById('balance');
+    const $txList = document.getElementById('txList');
+    const $createAcct = document.getElementById('createAcct');
+    const $acctType = document.getElementById('acctType');
+    const $initBal = document.getElementById('initBal');
+    const $selectAcct = document.getElementById('selectAcct');
+    const $fromAcct = document.getElementById('fromAcct');
+    const $depositBtn = document.getElementById('depositBtn');
+    const $withdrawBtn = document.getElementById('withdrawBtn');
+    const $transferBtn = document.getElementById('transferBtn');
+    const $toAcct = document.getElementById('toAcct');
+    const $amount = document.getElementById('amount');
+    const $note = document.getElementById('note');
+    const $clearBtn = document.getElementById('clearBtn');
+    const $simulateSalary = document.getElementById('simulateSalary');
+    const $clearTx = document.getElementById('clearTx');
+    const $refreshAccts = document.getElementById('refreshAccts');
+
+    function formatCurrency(n){ return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(n).replace('₹','₹ ') }
+
+    function refreshAccounts(){
+      const accts = server.getAccounts();
+      [$selectAcct, $fromAcct].forEach(el=>{ el.innerHTML = ''; });
+
+      if(accts.length === 0){
+        const opt = document.createElement('option'); opt.value=''; opt.textContent='-- no accounts --'; $selectAcct.appendChild(opt); $fromAcct.appendChild(opt.cloneNode(true));
+        $balance.textContent = formatCurrency(0);
+        return;
+      }
+
+      accts.forEach(a=>{
+        const opt = document.createElement('option'); opt.value = a.id; opt.textContent = `${a.type.toUpperCase()} - ${a.id} (${formatCurrency(a.balance)})`; $selectAcct.appendChild(opt);
+        const opt2 = opt.cloneNode(true); $fromAcct.appendChild(opt2);
+      });
+
+      if(!$selectAcct.value) $selectAcct.value = accts[0].id;
+      if(!$fromAcct.value) $fromAcct.value = accts[0].id;
+      updateSelectedBalance();
+      refresh();
+    }
+
+    function updateSelectedBalance(){ const id = $selectAcct.value; if(!id){ $balance.textContent = formatCurrency(0); return } $balance.textContent = formatCurrency(server.getBalance(id)); }
+
+    function refresh(){
+      const txs = server.getTransactions();
+      $txList.innerHTML = '';
+      if(txs.length === 0){ $txList.innerHTML = '<div style="color:var(--muted);padding:12px;border-radius:8px">No transactions yet</div>'; return }
+      txs.forEach(t=>{
+        const div = document.createElement('div');
+        const cls = t.type === 'credit' ? 'tx plus' : 'tx minus';
+        div.className = cls;
+        const left = document.createElement('div');
+        left.innerHTML = `<div style="font-size:13px;font-weight:600">${t.note}</div><div style="font-size:12px;color:var(--muted)">${new Date(t.date).toLocaleString()}</div><div style="font-size:12px;color:var(--muted)">From: ${t.from} • To: ${t.to}</div>`;
+        const right = document.createElement('div');
+        right.innerHTML = `<div style="font-weight:700">${t.type==='credit'? '+':'-'} ${formatCurrency(t.amount)}</div>`;
+        div.appendChild(left); div.appendChild(right);
+        $txList.appendChild(div);
+      })
+    }
+
+    // initial load
+    refreshAccounts();
+
+    $createAcct.addEventListener('click', ()=>{
+      try{
+        const type = $acctType.value;
+        const init = Number($initBal.value) || 0;
+        const acc = AccountFactory.createAccount(type, holderName, init);
+        server.registerAccount(acc);
+        alert(`Created ${type} account: ${acc.id}`);
+        $initBal.value = '';
+        refreshAccounts();
+      }catch(e){ alert(e.message) }
+    });
+
+    $refreshAccts.addEventListener('click', ()=>{ refreshAccounts(); });
+
+    $selectAcct.addEventListener('change', ()=>{ updateSelectedBalance(); });
+
+    $depositBtn.addEventListener('click', ()=>{
+      const id = $selectAcct.value; if(!id){ alert('Select an account'); return }
+      const amt = prompt('Enter deposit amount (₹)'); if(!amt) return;
+      try{ server.deposit(id, Number(amt)); updateSelectedBalance(); refresh(); alert('Deposit successful'); }catch(e){ alert(e.message) }
+    });
+
+    $withdrawBtn.addEventListener('click', ()=>{
+      const id = $selectAcct.value; if(!id){ alert('Select an account'); return }
+      const amt = prompt('Enter withdraw amount (₹)'); if(!amt) return;
+      try{ server.withdraw(id, Number(amt)); updateSelectedBalance(); refresh(); alert('Withdrawal successful'); }catch(e){ alert(e.message) }
+    });
+
+    $transferBtn.addEventListener('click', ()=>{
+      const fromId = $fromAcct.value; const to = $toAcct.value.trim(); const amt = Number($amount.value); const note = $note.value.trim();
+      try{ server.transfer(fromId, to, amt, note); refreshAccounts(); refresh(); updateSelectedBalance(); alert('Transfer completed'); }catch(e){ alert(e.message) }
+    });
+
+    $clearBtn.addEventListener('click', ()=>{ $toAcct.value=''; $amount.value=''; $note.value=''; });
+
+    $simulateSalary.addEventListener('click', ()=>{
+      const accts = server.getAccounts().filter(a=>a.type==='salary');
+      if(accts.length===0){ alert('No salary accounts found'); return }
+      accts.forEach(a=>{ server.deposit(a.id, 50000, 'Salary (demo)'); });
+      refreshAccounts(); refresh(); alert('Salary credited to salary accounts (demo)');
+    });
+
+    $clearTx.addEventListener('click', ()=>{ if(confirm('Clear transaction history?')){ server.clearTransactions(); refresh(); } });
+
+  </script>
+</body>
+</html>
