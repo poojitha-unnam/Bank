@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Loan Application Builder - Demo</title>
+  <style>
+    :root{--accent:#0b6efd;--bg:#f5f7fb;--card:#ffffff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);margin:0;color:#0f1724}
+    .container{max-width:1100px;margin:28px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{margin:0;font-size:20px}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+    .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,36,0.06)}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+    input[type=text],input[type=number],select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;margin-top:6px}
+    textarea{min-height:80px}
+    .row{display:flex;gap:10px}
+    .row>div{flex:1}
+    button{background:var(--accent);color:white;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+    button.ghost{background:transparent;color:var(--accent);border:1.5px solid rgba(11,110,253,0.12)}
+    .muted{color:var(--muted)}
+    .stages{margin-top:8px}
+    .stage-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;border:1px solid #f1f5f9;margin-top:8px}
+    .files-list{margin-top:8px}
+    pre{background:#0f172420;padding:12px;border-radius:8px;overflow:auto}
+    .actions{display:flex;gap:8px;margin-top:12px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Loan Application Builder — Builder Pattern Demo</h1>
+      <div class="muted">Build structured loan applications step-by-step</div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h3 style="margin-top:0">1. Customer Details</h3>
+        <label for="custName">Full name</label>
+        <input id="custName" type="text" placeholder="e.g. Priya Sharma">
+
+        <div class="row">
+          <div>
+            <label for="custEmail">Email</label>
+            <input id="custEmail" type="text" placeholder="email@example.com">
+          </div>
+          <div>
+            <label for="custPhone">Phone</label>
+            <input id="custPhone" type="text" placeholder="+91 98xxxxxxx">
+          </div>
+        </div>
+
+        <label for="custAddr">Address</label>
+        <textarea id="custAddr" placeholder="House, Street, City, State, PIN"></textarea>
+
+        <hr style="margin:14px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <h3 style="margin:0">2. Loan Details</h3>
+        <div class="row">
+          <div>
+            <label for="loanType">Loan type</label>
+            <select id="loanType">
+              <option value="home">Home Loan</option>
+              <option value="personal">Personal Loan</option>
+              <option value="auto">Auto Loan</option>
+              <option value="education">Education Loan</option>
+            </select>
+          </div>
+          <div>
+            <label for="loanAmount">Amount (₹)</label>
+            <input id="loanAmount" type="number" min="0" placeholder="500000">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="interestRate">Interest rate (%)</label>
+            <input id="interestRate" type="number" step="0.01" placeholder="7.5">
+          </div>
+          <div>
+            <label for="tenure">Tenure (years)</label>
+            <input id="tenure" type="number" min="0" placeholder="15">
+          </div>
+        </div>
+
+        <hr style="margin:14px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <h3 style="margin:0">3. Documents</h3>
+        <label for="docs">Upload documents (select multiple) — demo only; files are not uploaded to a server</label>
+        <input id="docs" type="file" multiple>
+        <div class="files-list" id="filesList"></div>
+
+        <hr style="margin:14px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <h3 style="margin:0">4. Approval Stages</h3>
+        <label for="stageName">Stage name</label>
+        <input id="stageName" type="text" placeholder="e.g. KYC, Credit Check, Sanction">
+        <label for="stageOwner">Owner (role)</label>
+        <input id="stageOwner" type="text" placeholder="e.g. Relationship Manager">
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button id="addStage">Add Stage</button>
+          <button id="clearStages" class="ghost">Clear Stages</button>
+        </div>
+        <div class="stages" id="stagesContainer"></div>
+
+        <div class="actions">
+          <button id="buildBtn">Build Loan Application</button>
+          <button id="saveBtn" class="ghost">Save (local)</button>
+          <button id="exportBtn" class="ghost">Export JSON</button>
+        </div>
+
+      </section>
+
+      <aside class="card">
+        <h3 style="margin-top:0">Application Preview</h3>
+        <div class="muted">The builder (JS) produces an immutable LoanApplication object via chained API.</div>
+        <div style="margin-top:12px">
+          <strong>Latest built object</strong>
+          <pre id="preview">{ }</pre>
+        </div>
+
+        <hr style="margin:14px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <h4 style="margin:0">Saved Applications</h4>
+        <div id="savedList" style="margin-top:8px"></div>
+
+        <div style="margin-top:12px">
+          <button id="loadBtn" class="ghost">Load last saved</button>
+          <button id="clearSaved" class="ghost">Clear saved apps</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // Builder pattern implementation for LoanApplication
+    (function(){
+      const PRIVATE = Symbol('LoanAppPrivate');
+
+      class LoanApplication {
+        constructor(key, props){
+          if(key !== PRIVATE) throw new Error('LoanApplication constructor is private. Use LoanApplication.Builder');
+          // freeze to make immutable
+          Object.assign(this, props);
+          Object.freeze(this.documents);
+          Object.freeze(this.approvalStages);
+          Object.freeze(this);
+        }
+
+        // Builder inner class
+        static get Builder(){
+          class Builder {
+            constructor(){
+              this._customer = {};
+              this._loan = {};
+              this._documents = [];
+              this._stages = [];
+            }
+
+            withCustomer(name, email, phone, address){
+              this._customer = { name, email, phone, address };
+              return this;
+            }
+
+            withLoanDetails(type, amount, interestRate, tenureYears){
+              this._loan = { type, amount: Number(amount), interestRate: Number(interestRate), tenureYears: Number(tenureYears) };
+              return this;
+            }
+
+            withDocument(name, size, type){
+              this._documents.push({ name, size, type });
+              return this;
+            }
+
+            withDocuments(docsArray){
+              // expects array of {name,size,type}
+              this._documents = this._documents.concat(docsArray);
+              return this;
+            }
+
+            addApprovalStage(name, owner, status='pending'){
+              this._stages.push({ name, owner, status, createdAt: new Date().toISOString() });
+              return this;
+            }
+
+            build(){
+              // basic validation
+              if(!this._customer.name) throw new Error('Customer name required');
+              if(!this._loan.type) throw new Error('Loan type required');
+              if(!this._loan.amount || isNaN(this._loan.amount) || this._loan.amount <= 0) throw new Error('Valid loan amount required');
+
+              const props = {
+                id: 'LA' + Date.now().toString().slice(-8) + Math.floor(Math.random()*900+100),
+                createdAt: new Date().toISOString(),
+                customer: Object.assign({}, this._customer),
+                loan: Object.assign({}, this._loan),
+                documents: this._documents.slice(),
+                approvalStages: this._stages.slice(),
+                status: this._stages.length ? this._stages[0].status : 'draft'
+              };
+
+              return new LoanApplication(PRIVATE, props);
+            }
+          }
+
+          return Builder;
+        }
+      }
+
+      // Expose to window for UI to use
+      window.LoanApplication = LoanApplication;
+    })();
+
+    // UI logic
+    (function(){
+      const filesInput = document.getElementById('docs');
+      const filesList = document.getElementById('filesList');
+      const stagesContainer = document.getElementById('stagesContainer');
+      const addStageBtn = document.getElementById('addStage');
+      const clearStagesBtn = document.getElementById('clearStages');
+      const buildBtn = document.getElementById('buildBtn');
+      const preview = document.getElementById('preview');
+      const saveBtn = document.getElementById('saveBtn');
+      const exportBtn = document.getElementById('exportBtn');
+      const savedList = document.getElementById('savedList');
+      const loadBtn = document.getElementById('loadBtn');
+      const clearSaved = document.getElementById('clearSaved');
+
+      let stagedDocs = [];
+      let stagedStages = [];
+      let lastBuilt = null;
+
+      function renderFiles(){
+        filesList.innerHTML = '';
+        if(stagedDocs.length === 0){ filesList.innerHTML = '<div class="muted">No documents selected</div>'; return }
+        stagedDocs.forEach(d=>{
+          const div = document.createElement('div'); div.className='stage-item';
+          div.innerHTML = `<div style="flex:1"><strong>${d.name}</strong><div class=\"muted\">${d.type} • ${d.size} bytes</div></div>`;
+          filesList.appendChild(div);
+        })
+      }
+
+      filesInput.addEventListener('change', e=>{
+        const files = Array.from(e.target.files);
+        const mapped = files.map(f=>({ name: f.name, size: f.size, type: f.type || 'unknown' }));
+        stagedDocs = stagedDocs.concat(mapped);
+        renderFiles();
+        // reset input to allow re-upload same file if needed
+        filesInput.value = '';
+      });
+
+      function renderStages(){
+        stagesContainer.innerHTML = '';
+        if(stagedStages.length === 0){ stagesContainer.innerHTML = '<div class="muted">No approval stages added</div>'; return }
+        stagedStages.forEach((s, idx)=>{
+          const div = document.createElement('div'); div.className='stage-item';
+          div.innerHTML = `<div style="flex:1"><strong>${s.name}</strong><div class=\"muted\">Owner: ${s.owner} • Status: ${s.status}</div></div>`;
+          const rm = document.createElement('button'); rm.className='ghost'; rm.textContent='Remove'; rm.style.height='36px';
+          rm.addEventListener('click', ()=>{ stagedStages.splice(idx,1); renderStages(); });
+          div.appendChild(rm);
+          stagesContainer.appendChild(div);
+        })
+      }
+
+      addStageBtn.addEventListener('click', ()=>{
+        const name = document.getElementById('stageName').value.trim();
+        const owner = document.getElementById('stageOwner').value.trim();
+        if(!name) return alert('Stage name required');
+        stagedStages.push({ name, owner: owner || 'Unknown', status: 'pending', createdAt: new Date().toISOString() });
+        document.getElementById('stageName').value=''; document.getElementById('stageOwner').value='';
+        renderStages();
+      });
+
+      clearStagesBtn.addEventListener('click', ()=>{ if(confirm('Clear all stages?')){ stagedStages=[]; renderStages(); } });
+
+      function showPreview(obj){ preview.textContent = JSON.stringify(obj, null, 2); }
+
+      buildBtn.addEventListener('click', ()=>{
+        try{
+          const name = document.getElementById('custName').value.trim();
+          const email = document.getElementById('custEmail').value.trim();
+          const phone = document.getElementById('custPhone').value.trim();
+          const addr = document.getElementById('custAddr').value.trim();
+
+          const type = document.getElementById('loanType').value;
+          const amount = Number(document.getElementById('loanAmount').value);
+          const rate = Number(document.getElementById('interestRate').value);
+          const tenure = Number(document.getElementById('tenure').value);
+
+          const builder = new LoanApplication.Builder()
+            .withCustomer(name, email, phone, addr)
+            .withLoanDetails(type, amount, rate, tenure)
+            .withDocuments(stagedDocs);
+
+          stagedStages.forEach(s=> builder.addApprovalStage(s.name, s.owner, s.status));
+
+          const app = builder.build();
+          lastBuilt = app;
+          showPreview(app);
+          alert('Loan application built successfully');
+        }catch(err){ alert(err.message || err); }
+      });
+
+      saveBtn.addEventListener('click', ()=>{
+        if(!lastBuilt) return alert('Build the application first');
+        const saved = JSON.parse(localStorage.getItem('loan_apps_v1')||'[]');
+        saved.push(lastBuilt);
+        localStorage.setItem('loan_apps_v1', JSON.stringify(saved));
+        renderSavedList();
+        alert('Saved locally');
+      });
+
+      function renderSavedList(){
+        const saved = JSON.parse(localStorage.getItem('loan_apps_v1')||'[]');
+        savedList.innerHTML = '';
+        if(saved.length === 0){ savedList.innerHTML = '<div class="muted">No saved applications</div>'; return }
+        saved.slice().reverse().forEach((s, idx)=>{
+          const div = document.createElement('div'); div.className='stage-item';
+          div.innerHTML = `<div style="flex:1"><strong>${s.id}</strong><div class=\"muted\">${s.customer.name} • ${s.loan.type} • ${s.loan.amount} • ${new Date(s.createdAt).toLocaleString()}</div></div>`;
+          const load = document.createElement('button'); load.className='ghost'; load.textContent='Load'; load.style.height='36px';
+          load.addEventListener('click', ()=>{ lastBuilt = s; showPreview(s); alert('Loaded into preview (read-only)'); });
+          div.appendChild(load);
+          savedList.appendChild(div);
+        });
+      }
+
+      exportBtn.addEventListener('click', ()=>{
+        if(!lastBuilt) return alert('Build application first');
+        const data = JSON.stringify(lastBuilt, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = (lastBuilt.id||'loan') + '.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
+      loadBtn.addEventListener('click', ()=>{ const saved = JSON.parse(localStorage.getItem('loan_apps_v1')||'[]'); if(saved.length===0) return alert('No saved apps'); lastBuilt = saved[saved.length-1]; showPreview(lastBuilt); alert('Loaded last saved application'); });
+
+      clearSaved.addEventListener('click', ()=>{ if(confirm('Clear saved applications?')){ localStorage.removeItem('loan_apps_v1'); renderSavedList(); } });
+
+      // initial render
+      renderFiles(); renderStages(); renderSavedList();
+
+    })();
+  </script>
+</body>
+</html>
