@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICICI - Demo Banking App (Singleton BankServer)</title>
+  <style>
+    /* Simple, modern styling inspired by banking sites */
+    :root{ --primary:#e53935; --dark:#0f1724; --muted:#6b7280; --bg:#f7fafc }
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--dark);margin:0}
+    header{background:white;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 6px rgba(15,23,36,0.06)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#ff6b6b,#c62828);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+    .brand h1{font-size:18px;margin:0}
+    nav a{margin-left:18px;color:var(--muted);text-decoration:none}
+
+    main{max-width:1100px;margin:28px auto;padding:18px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
+    .card{background:white;border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(15,23,36,0.06)}
+
+    /* Dashboard */
+    .balance{display:flex;align-items:center;justify-content:space-between}
+    .balance .amount{font-size:28px;font-weight:700;color:var(--dark)}
+    .actions{display:flex;gap:10px}
+    button{background:var(--primary);color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button.secondary{background:transparent;color:var(--primary);border:1.5px solid rgba(229,57,53,0.12)}
+
+    /* Transfer form */
+    label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
+    input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;margin-top:6px}
+
+    /* Transactions */
+    .tx-list{max-height:340px;overflow:auto;margin-top:12px}
+    .tx{display:flex;justify-content:space-between;padding:10px;border-radius:8px}
+    .tx.plus{background:rgba(34,197,94,0.06);color:#166534}
+    .tx.minus{background:rgba(239,68,68,0.06);color:#7f1d1d}
+
+    footer{max-width:1100px;margin:18px auto;color:var(--muted);font-size:13px;text-align:center}
+
+    @media(max-width:900px){
+      .grid{grid-template-columns:1fr}
+      header{padding:12px}
+      .brand h1{font-size:16px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">I</div>
+      <div>
+        <h1>ICICI Bank - Demo</h1>
+        <div style="font-size:12px;color:var(--muted)">Secure demo environment</div>
+      </div>
+    </div>
+    <nav>
+      <a href="#">Accounts</a>
+      <a href="#">Payments</a>
+      <a href="#">Support</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="grid">
+      <section class="card">
+        <div class="balance">
+          <div>
+            <div style="font-size:13px;color:var(--muted)">Primary Savings - ****1234</div>
+            <div class="amount" id="balance">₹ 0.00</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:6px">Available balance</div>
+          </div>
+          <div class="actions">
+            <button id="depositBtn">Deposit</button>
+            <button class="secondary" id="withdrawBtn">Withdraw</button>
+          </div>
+        </div>
+
+        <hr style="margin:16px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <div>
+          <h3 style="margin:0 0 8px 0">Quick Transfer</h3>
+          <label for="to">To (Account / IFSC)</label>
+          <input id="to" placeholder="e.g. 5678901234 / ICIC0001234">
+
+          <label for="amount">Amount (₹)</label>
+          <input id="amount" type="number" min="1" placeholder="1000">
+
+          <label for="note">Note (optional)</label>
+          <input id="note" placeholder="Rent / Bill / Gift">
+
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button id="transferBtn">Send Money</button>
+            <button class="secondary" id="clearBtn">Clear</button>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <h3 style="margin:0 0 8px 0">Recent Transactions</h3>
+          <div class="tx-list" id="txList">
+            <!-- transactions go here -->
+          </div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h3 style="margin-top:0">Account Summary</h3>
+        <div style="font-size:13px;color:var(--muted)">A safe demo to illustrate Singleton pattern</div>
+
+        <dl style="margin-top:12px">
+          <dt style="font-size:13px;color:var(--muted)">Account holder</dt>
+          <dd style="margin:6px 0 10px 0;font-weight:600">Poojitha Unnam</dd>
+
+          <dt style="font-size:13px;color:var(--muted)">Account no.</dt>
+          <dd style="margin:6px 0 10px 0">****1234</dd>
+
+          <dt style="font-size:13px;color:var(--muted)">IFSC</dt>
+          <dd style="margin:6px 0 10px 0">ICIC0000001</dd>
+        </dl>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid #f1f5f9">
+
+        <h4 style="margin:6px 0">Utilities</h4>
+        <button id="simulateSalary" style="width:100%;margin-top:8px">Simulate Salary (Monthly)</button>
+        <button id="clearTx" class="secondary" style="width:100%;margin-top:8px">Clear Transactions</button>
+
+        <div style="font-size:12px;color:var(--muted);margin-top:12px">Singleton BankServer ensures a single source of truth for balance/transactions.</div>
+      </aside>
+    </div>
+  </main>
+
+  <footer>
+    This is a demo UI only. Do not use for real banking. ICICI trademark is used for demonstration purposes.
+  </footer>
+
+  <script>
+    /*
+      BankServer: Singleton with private constructor.
+      Implementation detail: the constructor is guarded by a private Symbol token.
+      Consumers must call BankServer.getInstance() to get the single instance.
+    */
+
+    const BankServer = (function(){
+      const PRIVATE = Symbol('private_key');
+
+      class BankServerClass {
+        constructor(key){
+          if(key !== PRIVATE){
+            throw new Error('BankServer constructor is private. Use BankServer.getInstance()');
+          }
+
+          // state
+          this._balance = 0; // rupees
+          this._transactions = []; // {id, type, amount, to, note, date}
+
+          // try load from localStorage (demo persistence)
+          const saved = localStorage.getItem('demo_bank_state_v1');
+          if(saved){
+            try{
+              const parsed = JSON.parse(saved);
+              this._balance = parsed.balance || 0;
+              this._transactions = parsed.transactions || [];
+            }catch(e){ /* ignore */ }
+          }
+        }
+
+        static getInstance(){
+          if(!BankServerClass._instance){
+            BankServerClass._instance = new BankServerClass(PRIVATE);
+          }
+          return BankServerClass._instance;
+        }
+
+        _save(){
+          localStorage.setItem('demo_bank_state_v1', JSON.stringify({ balance: this._balance, transactions: this._transactions }));
+        }
+
+        getBalance(){ return this._balance }
+
+        getTransactions(){ return [...this._transactions].reverse() }
+
+        deposit(amount, note){
+          amount = Number(amount);
+          if(isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
+          this._balance += amount;
+          const tx = { id: Date.now()+Math.random(), type:'credit', amount, to:'Self', note: note||'Deposit', date:new Date().toISOString() };
+          this._transactions.push(tx);
+          this._save();
+          return tx;
+        }
+
+        withdraw(amount, note){
+          amount = Number(amount);
+          if(isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
+          if(amount > this._balance) throw new Error('Insufficient balance');
+          this._balance -= amount;
+          const tx = { id: Date.now()+Math.random(), type:'debit', amount, to:'Cash/Withdraw', note: note||'Withdraw', date:new Date().toISOString() };
+          this._transactions.push(tx);
+          this._save();
+          return tx;
+        }
+
+        transfer(to, amount, note){
+          amount = Number(amount);
+          if(!to) throw new Error('Invalid destination');
+          if(isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
+          if(amount > this._balance) throw new Error('Insufficient balance');
+          this._balance -= amount;
+          const tx = { id: Date.now()+Math.random(), type:'debit', amount, to:to, note:note||'Transfer', date:new Date().toISOString() };
+          this._transactions.push(tx);
+          this._save();
+          return tx;
+        }
+
+        clearTransactions(){ this._transactions = []; this._save(); }
+
+      }
+
+      return BankServerClass;
+    })();
+
+    // UI bindings
+    const server = BankServer.getInstance(); // enforce single instance
+
+    const $balance = document.getElementById('balance');
+    const $txList = document.getElementById('txList');
+    const $depositBtn = document.getElementById('depositBtn');
+    const $withdrawBtn = document.getElementById('withdrawBtn');
+    const $transferBtn = document.getElementById('transferBtn');
+    const $clearBtn = document.getElementById('clearBtn');
+    const $simulateSalary = document.getElementById('simulateSalary');
+    const $clearTx = document.getElementById('clearTx');
+
+    function formatCurrency(n){
+      return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(n).replace('₹', '₹ ');
+    }
+
+    function refresh(){
+      $balance.textContent = formatCurrency(server.getBalance());
+      const txs = server.getTransactions();
+      $txList.innerHTML = '';
+      if(txs.length === 0){ $txList.innerHTML = '<div style="color:var(--muted);padding:12px;border-radius:8px">No transactions yet</div>'; return }
+      txs.forEach(t=>{
+        const div = document.createElement('div');
+        const cls = t.type === 'credit' ? 'tx plus' : 'tx minus';
+        div.className = cls;
+        div.innerHTML = `<div style="font-size:13px;font-weight:600">${t.note}</div>
+                         <div style="font-size:12px;color:var(--muted)">${new Date(t.date).toLocaleString()}</div>
+                         <div style="font-weight:700; margin-left:12px">${t.type==='credit'? '+':'-'} ${formatCurrency(t.amount)}</div>
+                         <div style="font-size:12px;color:var(--muted);margin-top:6px">To: ${t.to}</div>`;
+        // Layout flex-like
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.justifyContent = 'space-between';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.gap = '12px';
+        const left = document.createElement('div');
+        left.innerHTML = `<div style="font-size:13px;font-weight:600">${t.note}</div><div style="font-size:12px;color:var(--muted)">${new Date(t.date).toLocaleString()}</div><div style="font-size:12px;color:var(--muted)">To: ${t.to}</div>`;
+        const right = document.createElement('div');
+        right.innerHTML = `<div style="font-weight:700">${t.type==='credit'? '+':'-'} ${formatCurrency(t.amount)}</div>`;
+        div.innerHTML = '';
+        div.appendChild(left);
+        div.appendChild(right);
+        $txList.appendChild(div);
+      })
+    }
+
+    // Initial render
+    refresh();
+
+    $depositBtn.addEventListener('click', ()=>{
+      const amt = prompt('Enter deposit amount (₹)');
+      if(!amt) return;
+      try{ server.deposit(Number(amt)); refresh(); alert('Deposit successful'); }catch(e){ alert(e.message) }
+    })
+
+    $withdrawBtn.addEventListener('click', ()=>{
+      const amt = prompt('Enter withdraw amount (₹)');
+      if(!amt) return;
+      try{ server.withdraw(Number(amt)); refresh(); alert('Withdrawal successful'); }catch(e){ alert(e.message) }
+    })
+
+    $transferBtn.addEventListener('click', ()=>{
+      const to = document.getElementById('to').value.trim();
+      const amount = document.getElementById('amount').value;
+      const note = document.getElementById('note').value.trim();
+      try{
+        server.transfer(to, Number(amount), note);
+        refresh();
+        alert('Transfer completed');
+      }catch(e){ alert(e.message) }
+    })
+
+    $clearBtn.addEventListener('click', ()=>{
+      document.getElementById('to').value='';
+      document.getElementById('amount').value='';
+      document.getElementById('note').value='';
+    })
+
+    $simulateSalary.addEventListener('click', ()=>{
+      try{ server.deposit(50000, 'Salary'); refresh(); alert('Salary credited (demo)'); }catch(e){ alert(e.message) }
+    })
+
+    $clearTx.addEventListener('click', ()=>{
+      if(confirm('Clear transaction history?')){ server.clearTransactions(); refresh(); }
+    })
+
+    // Defensive test: trying to construct directly should fail
+    try{
+      // uncommenting next line will throw
+      // new BankServer();
+    }catch(e){ console.warn(e.message) }
+
+  </script>
+</body>
+</html>
